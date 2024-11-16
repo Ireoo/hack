@@ -65,7 +65,7 @@ while true; do
     FOUND_HANDSHAKE=false
   
     # 定义最大时间限制 10 分钟（600 秒）
-    MAX_WAIT_TIME=600
+    MAX_WAIT_TIME=60
     ELAPSED_TIME=0
   
     echo "发送去认证请求..."
