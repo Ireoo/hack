@@ -90,7 +90,8 @@ while true; do
         echo "已执行 10 分钟，停止发送去认证请求。"
         break
       fi
-  
+
+      echo "已经执行：$ELAPSED_TIME 秒."
       # 每 5 秒休眠一次
       sleep 5
     done
